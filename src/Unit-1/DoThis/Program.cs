@@ -11,22 +11,34 @@ namespace WinTail
         {
             // initialize MyActorSystem
             MyActorSystem = ActorSystem.Create("MyActorSystem");
-            
 
-            // make consoleWriterActor using these props: Props.Create(() => new ConsoleWriterActor())
-            // make consoleReaderActor using these props: Props.Create(() => new ConsoleReaderActor(consoleWriterActor))
-            var consoleWriterActor = MyActorSystem.ActorOf(Props.Create(() => new ConsoleWriterActor()));
-            var consoleReaderActor =
-                MyActorSystem.ActorOf(Props.Create(() => new ConsoleReaderActor(consoleWriterActor)));
+            // Three types of Props creation syntax:
+            // typeof syntax - not recommended due to type safety reasons, so commented out and replaced by generic syntax
+            // lambda syntax - good choice
+            // generic syntax - good choice too
+
+            // consoleWriterProps = Props.Create(typeof(ConsoleWriterActor));
+            Props consoleWriterProps = Props.Create<ConsoleWriterActor>();
+            IActorRef consoleWriterActor = MyActorSystem.ActorOf(consoleWriterProps, "consoleWriterActor");
+
+            Props validationActorProps = Props.Create(() => new ValidationActor(consoleWriterActor));
+            IActorRef validationActor = MyActorSystem.ActorOf(validationActorProps, "validationActor");
+
+            Props consoleReaderProps = Props.Create<ConsoleReaderActor>(validationActor);
+            IActorRef consoleReaderActor = MyActorSystem.ActorOf(consoleReaderProps, "consoleReaderActor");
+            
 
             // tell console reader to begin
             consoleReaderActor.Tell(ConsoleReaderActor.StartCommand);
 
             // blocks the main thread from exiting until the actor system is shut down
             MyActorSystem.WhenTerminated.Wait();
+
         }
 
-        
+
+
+
     }
     #endregion
 }
